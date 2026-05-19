@@ -1,0 +1,419 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum ProductCategory {
+  wig
+  extension
+  bundle
+  accessory
+}
+
+enum ProductSubcategory {
+  lace_front
+  full_lace
+  hd_lace
+  clip_in
+  tape_in
+  hair_bundle
+  accessory
+  other
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  processing
+  shipped
+  delivered
+  cancelled
+  refunded
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum EnquiryStatus {
+  new
+  in_progress
+  resolved
+}
+
+enum AdminRole {
+  superadmin
+  editor
+  support
+}
+
+enum FaqCategory {
+  shipping_delivery
+  returns_exchanges
+  hair_care
+  products
+  payments
+  general
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Product {
+  id              Int                @id @default(autoincrement())
+  name            String
+  description     String?
+  category        ProductCategory
+  subcategory     ProductSubcategory @default(other)
+  price           Decimal            @db.Decimal(10, 2)
+  originalPrice   Decimal?           @db.Decimal(10, 2) @map("original_price")
+  discountPercent Int?               @map("discount_percent")
+  isOnSale        Boolean            @default(false) @map("is_on_sale")
+  isFeatured      Boolean            @default(false) @map("is_featured")
+  isNewArrival    Boolean            @default(false) @map("is_new_arrival")
+  stockQty        Int                @default(0) @map("stock_qty")
+  deletedAt       DateTime?          @map("deleted_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  images      ProductImage[]
+  sizes       ProductSize[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  reviews     Review[]
+  bundleItems BundleItem[]
+  customerLooks CustomerLook[]
+
+  @@index([category])
+  @@index([isOnSale])
+  @@index([isFeatured])
+  @@index([deletedAt])
+  @@map("products")
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  productId Int     @map("product_id")
+  imageUrl  String  @map("image_url")
+  isPrimary Boolean @default(false) @map("is_primary")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model ProductSize {
+  id        Int    @id @default(autoincrement())
+  productId Int    @map("product_id")
+  size      String
+  stockQty  Int    @default(0) @map("stock_qty")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, size])
+  @@index([productId])
+  @@map("product_sizes")
+}
+
+model Bundle {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  originalPrice Decimal? @db.Decimal(10, 2) @map("original_price")
+  isLimited     Boolean  @default(false) @map("is_limited")
+  imageUrl      String?  @map("image_url")
+  deletedAt     DateTime? @map("deleted_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  items      BundleItem[]
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@index([deletedAt])
+  @@map("bundles")
+}
+
+model BundleItem {
+  id        Int    @id @default(autoincrement())
+  bundleId  Int    @map("bundle_id")
+  productId Int    @map("product_id")
+  size      String?
+  quantity  Int    @default(1)
+
+  bundle  Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([bundleId])
+  @@map("bundle_items")
+}
+
+model Promotion {
+  id                    Int      @id @default(autoincrement())
+  title                 String
+  discountPercent       Int      @map("discount_percent")
+  maxSavings            Decimal? @db.Decimal(10, 2) @map("max_savings")
+  freeShippingThreshold Decimal? @db.Decimal(10, 2) @map("free_shipping_threshold")
+  itemsOnSale           Int?     @map("items_on_sale")
+  startAt               DateTime @map("start_at")
+  endAt                 DateTime @map("end_at")
+  isActive              Boolean  @default(true) @map("is_active")
+
+  @@index([isActive])
+  @@index([startAt, endAt])
+  @@map("promotions")
+}
+
+model Customer {
+  id           Int      @id @default(autoincrement())
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  email        String   @unique
+  phone        String?
+  passwordHash String   @map("password_hash")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  orders        Order[]
+  reviews       Review[]
+  cartSessions  CartSession[]
+  customerLooks CustomerLook[]
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([deletedAt])
+  @@map("customers")
+}
+
+model RefreshToken {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  customerId Int      @map("customer_id")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([customerId])
+  @@map("refresh_tokens")
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  orderNumber     String      @unique @map("order_number")
+  customerId      Int?        @map("customer_id")
+  guestEmail      String?     @map("guest_email")
+  guestPhone      String?     @map("guest_phone")
+  status          OrderStatus @default(pending)
+  totalAmount     Decimal     @db.Decimal(10, 2) @map("total_amount")
+  shippingAddress String?     @map("shipping_address")
+  phone           String?
+  notes           String?
+  deletedAt       DateTime?   @map("deleted_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  customer    Customer?          @relation(fields: [customerId], references: [id])
+  items       OrderItem[]
+  payments    PaymentTransaction[]
+
+  @@index([orderNumber])
+  @@index([customerId])
+  @@index([guestPhone])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int     @map("order_id")
+  productId Int?    @map("product_id")
+  bundleId  Int?    @map("bundle_id")
+  size      String?
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2) @map("unit_price")
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+  bundle  Bundle?  @relation(fields: [bundleId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model PaymentTransaction {
+  id              Int           @id @default(autoincrement())
+  orderId         Int           @map("order_id")
+  provider        String        // 'paystack', 'flutterwave'
+  providerRef     String?       @map("provider_ref")
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("GHS")
+  status          PaymentStatus @default(pending)
+  webhookPayload  Json?         @map("webhook_payload")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([providerRef])
+  @@map("payment_transactions")
+}
+
+model CartSession {
+  id         Int      @id @default(autoincrement())
+  sessionId  String   @unique @map("session_id")
+  customerId Int?     @map("customer_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  customer Customer?  @relation(fields: [customerId], references: [id])
+  items    CartItem[]
+
+  @@index([sessionId])
+  @@index([customerId])
+  @@map("cart_sessions")
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cartId    Int     @map("cart_id")
+  productId Int?    @map("product_id")
+  bundleId  Int?    @map("bundle_id")
+  size      String?
+  quantity  Int     @default(1)
+
+  cart    CartSession @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product?   @relation(fields: [productId], references: [id])
+  bundle  Bundle?    @relation(fields: [bundleId], references: [id])
+
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  customerId Int?     @map("customer_id")
+  productId  Int      @map("product_id")
+  rating     Int
+  title      String?
+  body       String?
+  isVerified Boolean  @default(false) @map("is_verified")
+  location   String?
+  deletedAt  DateTime? @map("deleted_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+  product  Product   @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@index([customerId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model CustomerLook {
+  id           Int      @id @default(autoincrement())
+  customerId   Int?     @map("customer_id")
+  customerName String   @map("customer_name")
+  imageUrl     String   @map("image_url")
+  productId    Int?     @map("product_id")
+  isApproved   Boolean  @default(false) @map("is_approved")
+  submittedAt  DateTime @default(now()) @map("submitted_at")
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+  product  Product?  @relation(fields: [productId], references: [id])
+
+  @@index([isApproved])
+  @@map("customer_looks")
+}
+
+model Enquiry {
+  id              Int           @id @default(autoincrement())
+  firstName       String        @map("first_name")
+  lastName        String        @map("last_name")
+  email           String
+  phone           String?
+  productInterest String?       @map("product_interest")
+  message         String
+  status          EnquiryStatus @default(new)
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([status])
+  @@index([email])
+  @@map("enquiries")
+}
+
+model Faq {
+  id        Int         @id @default(autoincrement())
+  category  FaqCategory
+  question  String
+  answer    String
+  sortOrder Int         @default(0) @map("sort_order")
+
+  @@index([category])
+  @@map("faq")
+}
+
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         AdminRole @default(support)
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  refreshTokens AdminRefreshToken[]
+  auditLogs     AuditLog[]
+
+  @@index([email])
+  @@map("admin_users")
+}
+
+model AdminRefreshToken {
+  id          Int      @id @default(autoincrement())
+  token       String   @unique
+  adminUserId Int      @map("admin_user_id")
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  revokedAt   DateTime? @map("revoked_at")
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("admin_refresh_tokens")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  adminUserId Int      @map("admin_user_id")
+  action      String
+  resource    String
+  resourceId  String?  @map("resource_id")
+  payload     Json?
+  ipAddress   String?  @map("ip_address")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id])
+
+  @@index([adminUserId])
+  @@index([resource, resourceId])
+  @@map("audit_logs")
+}

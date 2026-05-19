@@ -1,0 +1,63 @@
+{
+  "name": "goldcoast-hair-api",
+  "version": "1.0.0",
+  "description": "Production API for Gold Coast Hair e-commerce platform",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "db:migrate": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "vitest run tests/e2e",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/multipart": "^8.3.0",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/swagger": "^8.14.0",
+    "@fastify/swagger-ui": "^4.0.1",
+    "@prisma/client": "^5.14.0",
+    "@scalar/fastify-api-reference": "^1.24.0",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.3.1",
+    "dotenv": "^17.4.2",
+    "fastify": "^4.28.1",
+    "fastify-plugin": "^4.5.1",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "module-alias": "^2.3.4",
+    "nanoid": "^3.3.7",
+    "pino": "^9.2.0",
+    "pino-pretty": "^11.2.1",
+    "tsconfig-paths": "^4.2.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.10",
+    "@typescript-eslint/eslint-plugin": "^7.16.0",
+    "@typescript-eslint/parser": "^7.16.0",
+    "@vitest/coverage-v8": "^2.0.3",
+    "eslint": "^8.57.0",
+    "knip": "^6.14.1",
+    "madge": "^8.0.0",
+    "prisma": "^5.14.0",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
