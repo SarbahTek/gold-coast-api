@@ -6,7 +6,7 @@ import rateLimit from '@fastify/rate-limit'
 import { env } from './config/env'
 import { getRedis } from './config/redis'
 
-import { swaggerPlugin } from './config/swagger'
+import { swaggerPlugin, definitions } from './config/swagger'
 import { errorHandlerPlugin } from './shared/middleware/error.handler'
 
 import { healthRoutes } from './shared/hooks/health.routes'
@@ -52,6 +52,22 @@ export async function buildApp(): Promise<FastifyInstance> {
     requestTimeout: 30000,
     bodyLimit: 5 * 1024 * 1024,
   })
+
+  // ─────────────────────────────────────────────
+  // SCHEMA REGISTRATION (MUST BE BEFORE EVERYTHING)
+  // ─────────────────────────────────────────────
+  // app.register() is async and deferred by avvio. Any addSchema() call
+  // inside a plugin runs AFTER all sibling plugins have already queued
+  // their route compilation — so AJV never sees the schemas in time.
+  // Calling addSchema() directly on the root instance here is synchronous
+  // and guarantees schemas are available before any plugin runs.
+  const registered = new Set<string>()
+  for (const schema of Object.values(definitions)) {
+    const id = schema.$id
+    if (!id || registered.has(id)) continue
+    registered.add(id)
+    app.addSchema(schema)
+  }
 
   // ─────────────────────────────────────────────
   // SECURITY FIRST (safe early)
@@ -102,7 +118,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(errorHandlerPlugin)
 
   // ─────────────────────────────────────────────
-  // SWAGGER (register schemas BEFORE routes)
+  // SWAGGER
   // ─────────────────────────────────────────────
   await app.register(swaggerPlugin)
 

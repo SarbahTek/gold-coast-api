@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify'
+import fp from 'fastify-plugin'
 import swagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import { env } from './env'
@@ -110,65 +111,57 @@ const PaginationQuery = {
 // Component schemas
 // ─────────────────────────────────────────────────────────────
 
-const definitions: Record<string, any> = {
+// Exported so app.ts can call app.addSchema() directly on the root
+// Fastify instance before any plugin registration. This is required
+// because app.register() is deferred — schemas added inside a plugin
+// are not visible to AJV when sibling plugins compile their routes.
+export const definitions: Record<string, any> = {
   RegisterBody: {
+    $id: 'RegisterBody',
     type: 'object',
     additionalProperties: false,
     required: ['firstName', 'lastName', 'email', 'password'],
     properties: {
       firstName: { type: 'string' },
       lastName: { type: 'string' },
-      email: {
-        type: 'string',
-        format: 'email',
-      },
+      email: { type: 'string', format: 'email' },
       phone: { type: 'string' },
-      password: {
-        type: 'string',
-        minLength: 8,
-      },
+      password: { type: 'string', minLength: 8 },
     },
   },
 
   LoginBody: {
+    $id: 'LoginBody',
     type: 'object',
     additionalProperties: false,
     required: ['email', 'password'],
     properties: {
-      email: {
-        type: 'string',
-        format: 'email',
-      },
-      password: {
-        type: 'string',
-      },
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string' },
     },
   },
 
   RefreshBody: {
+    $id: 'RefreshBody',
     type: 'object',
     additionalProperties: false,
     required: ['refreshToken'],
     properties: {
-      refreshToken: {
-        type: 'string',
-      },
+      refreshToken: { type: 'string' },
     },
   },
 
   TokenResponse: {
+    $id: 'TokenResponse',
     type: 'object',
     properties: {
-      accessToken: {
-        type: 'string',
-      },
-      refreshToken: {
-        type: 'string',
-      },
+      accessToken: { type: 'string' },
+      refreshToken: { type: 'string' },
     },
   },
 
   Product: {
+    $id: 'Product',
     type: 'object',
     properties: {
       id: { type: 'integer' },
@@ -177,14 +170,12 @@ const definitions: Record<string, any> = {
       category: { type: 'string' },
       price: { type: 'number' },
       stockQty: { type: 'integer' },
-      createdAt: {
-        type: 'string',
-        format: 'date-time',
-      },
+      createdAt: { type: 'string', format: 'date-time' },
     },
   },
 
   CreateProductBody: {
+    $id: 'CreateProductBody',
     type: 'object',
     additionalProperties: false,
     required: ['name', 'category', 'price'],
@@ -193,57 +184,44 @@ const definitions: Record<string, any> = {
       description: { type: 'string' },
       category: { type: 'string' },
       price: { type: 'number' },
-      stockQty: {
-        type: 'integer',
-        default: 0,
-      },
+      stockQty: { type: 'integer', default: 0 },
     },
   },
 
   Order: {
+    $id: 'Order',
     type: 'object',
     properties: {
       id: { type: 'integer' },
       orderNumber: { type: 'string' },
       status: { type: 'string' },
       totalAmount: { type: 'number' },
-      createdAt: {
-        type: 'string',
-        format: 'date-time',
-      },
+      createdAt: { type: 'string', format: 'date-time' },
     },
   },
 
   PlaceOrderBody: {
+    $id: 'PlaceOrderBody',
     type: 'object',
     additionalProperties: false,
     required: ['shippingAddress', 'phone', 'items'],
     properties: {
-      shippingAddress: {
-        type: 'string',
-      },
-      phone: {
-        type: 'string',
-      },
+      shippingAddress: { type: 'string' },
+      phone: { type: 'string' },
       items: {
         type: 'array',
         items: {
           type: 'object',
           required: ['productId', 'quantity'],
           properties: {
-            productId: {
-              type: 'integer',
-            },
-            quantity: {
-              type: 'integer',
-              minimum: 1,
-            },
+            productId: { type: 'integer' },
+            quantity: { type: 'integer', minimum: 1 },
           },
         },
       },
     },
   },
-} as const
+}
 
 // ─────────────────────────────────────────────────────────────
 // Shared route schema helpers
@@ -265,60 +243,37 @@ export const swaggerSchemas = {
   register: {
     tags: ['Auth'],
     summary: 'Register user',
-  
-    body: definitions.RegisterBody,
-  
-    response: {
-      201: ApiResponse,
-      400: ErrorResponse,
-    },
+    body: { $ref: 'RegisterBody#' },
+    response: { 201: ApiResponse, 400: ErrorResponse },
   },
-  
+
   login: {
     tags: ['Auth'],
     summary: 'Login user',
-  
-    body: definitions.LoginBody,
-  
-    response: {
-      200: ApiResponse,
-      401: ErrorResponse,
-    },
+    body: { $ref: 'LoginBody#' },
+    response: { 200: ApiResponse, 401: ErrorResponse },
   },
-  
+
   refresh: {
     tags: ['Auth'],
     summary: 'Refresh access token',
-  
-    body: definitions.RefreshBody,
-  
-    response: {
-      200: ApiResponse,
-      401: ErrorResponse,
-    },
+    body: { $ref: 'RefreshBody#' },
+    response: { 200: ApiResponse, 401: ErrorResponse },
   },
+
   logout: {
     tags: ['Auth'],
     summary: 'Logout user',
-  
+    body: { $ref: 'RefreshBody#' },
     security: defaultProtected,
-  
-    response: {
-      200: ApiResponse,
-      401: ErrorResponse,
-    },
+    response: { 200: ApiResponse, 401: ErrorResponse },
   },
-  
+
   adminLogin: {
     tags: ['Auth'],
     summary: 'Admin login',
-  
-    body: definitions.LoginBody,
-  
-    response: {
-      200: ApiResponse,
-      401: ErrorResponse,
-    },
+    body: { $ref: 'LoginBody#' },
+    response: { 200: ApiResponse, 401: ErrorResponse },
   },
 
   // PRODUCTS
@@ -327,49 +282,31 @@ export const swaggerSchemas = {
     tags: ['Products'],
     summary: 'List products',
     querystring: PaginationQuery,
-    response: {
-      200: ApiResponse,
-    },
+    response: { 200: ApiResponse },
   },
 
   getProduct: {
     tags: ['Products'],
     summary: 'Get product',
     params: IdParam,
-    response: {
-      200: ApiResponse,
-      404: ErrorResponse,
-    },
+    response: { 200: ApiResponse, 404: ErrorResponse },
   },
 
   createProduct: {
     tags: ['Products'],
     summary: 'Create product',
-  
     security: defaultProtected,
-  
-    body: definitions.CreateProductBody,
-  
-    response: {
-      201: ApiResponse,
-      400: ErrorResponse,
-    },
+    body: { $ref: 'CreateProductBody#' },
+    response: { 201: ApiResponse, 400: ErrorResponse },
   },
-  
+
   updateProduct: {
     tags: ['Products'],
     summary: 'Update product',
-  
     security: defaultProtected,
-  
     params: IdParam,
-  
-    body: definitions.CreateProductBody,
-  
-    response: {
-      200: ApiResponse,
-      404: ErrorResponse,
-    },
+    body: { $ref: 'CreateProductBody#' },
+    response: { 200: ApiResponse, 404: ErrorResponse },
   },
 
   deleteProduct: {
@@ -377,42 +314,20 @@ export const swaggerSchemas = {
     summary: 'Delete product',
     security: defaultProtected,
     params: IdParam,
-    response: {
-      200: ApiResponse,
-      404: ErrorResponse,
-    },
+    response: { 200: ApiResponse, 404: ErrorResponse },
   },
 
-  getFeatured: {
-    tags: ['Products'],
-    summary: 'Get featured products',
-    response: DefaultRouteResponse,
-  },
-
-  getSale: {
-    tags: ['Products'],
-    summary: 'Get sale products',
-    response: DefaultRouteResponse,
-  },
-
-  getCategories: {
-    tags: ['Products'],
-    summary: 'Get product categories',
-    response: DefaultRouteResponse,
-  },
+  getFeatured: { tags: ['Products'], summary: 'Get featured products', response: DefaultRouteResponse },
+  getSale: { tags: ['Products'], summary: 'Get sale products', response: DefaultRouteResponse },
+  getCategories: { tags: ['Products'], summary: 'Get product categories', response: DefaultRouteResponse },
 
   // ORDERS
 
   placeOrder: {
     tags: ['Orders'],
     summary: 'Place order',
-  
-    body: definitions.PlaceOrderBody,
-  
-    response: {
-      201: ApiResponse,
-      400: ErrorResponse,
-    },
+    body: { $ref: 'PlaceOrderBody#' },
+    response: { 201: ApiResponse, 400: ErrorResponse },
   },
 
   listOrders: {
@@ -792,20 +707,30 @@ export const swaggerSchemas = {
 // Swagger plugin
 // ─────────────────────────────────────────────────────────────
 
-export async function swaggerPlugin(
+async function swaggerPluginFn(
   app: FastifyInstance
 ): Promise<void> {
+
+  // Schemas are registered on the root app instance in app.ts before this
+  // plugin loads. addSchema() must be called directly on the root — not
+  // inside a plugin — so AJV has them available when routes compile.
 
   const swaggerOptions: FastifyDynamicSwaggerOptions = {
     openapi: {
       openapi: '3.0.3',
-  
+
       info: {
         title: 'Gold Coast Hair API',
         version: '1.0.0',
-        description: 'Production API documentation',
+        description: [
+          'Production API for Gold Coast Hair.',
+          '',
+          '**Auth:** `POST /api/v1/auth/login` → copy `accessToken` → click **Authorize** → paste `Bearer <token>`',
+          '',
+          'Tokens expire in **15 minutes**. Renew with `POST /api/v1/auth/refresh`.',
+        ].join('\n'),
       },
-  
+
       servers: [
         {
           url:
@@ -814,7 +739,7 @@ export async function swaggerPlugin(
               : `http://localhost:${env.PORT}`,
         },
       ],
-  
+
       components: {
         securitySchemes: {
           bearerAuth: {
@@ -824,34 +749,61 @@ export async function swaggerPlugin(
           },
         },
       },
-  
+
+      // FIX 3: Every tag name used in swaggerSchemas must be declared here.
+      // Any route whose tag is not listed gets silently dropped from the UI.
       tags: [
         { name: 'Auth' },
         { name: 'Products' },
+        { name: 'Bundles' },
+        { name: 'Cart' },
         { name: 'Orders' },
         { name: 'Reviews' },
-        { name: 'Admin' },
+        { name: 'Enquiries' },
+        { name: 'FAQ' },
+        { name: 'Promotions' },
+        { name: 'Customer Looks' },
         { name: 'Customers' },
+        { name: 'Admin' },
         { name: 'Shared' },
         { name: 'Uploads' },
         { name: 'Webhooks' },
         { name: 'Health' },
       ],
     },
+
+    // FIX 2: Tells the swagger serialiser how to resolve $id back to a name
+    // so $ref: 'SchemaId#' maps correctly in the rendered UI.
+    refResolver: {
+      buildLocalReference(json, _baseUri, _fragment, i) {
+        const id = (json as Record<string, unknown>)['$id']
+        return typeof id === 'string' ? id : `def-${i}`
+      },
+    },
   }
-  
+
   await app.register(swagger, swaggerOptions)
-  
+
   await app.register(swaggerUi, {
     routePrefix: '/docs',
-  
+
     uiConfig: {
       docExpansion: 'list',
       deepLinking: true,
       persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
     },
-  
+
     staticCSP: true,
     transformSpecificationClone: true,
   })
 }
+
+// fp() removes Fastify's plugin encapsulation boundary.
+// Without it, @fastify/swagger runs in an isolated scope and cannot
+// see routes registered in sibling plugins — so paths:{} stays empty.
+export const swaggerPlugin = fp(swaggerPluginFn, {
+  name: 'swagger-plugin',
+  fastify: '4.x',
+})
