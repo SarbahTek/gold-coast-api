@@ -454,20 +454,20 @@ export const swaggerSchemas = {
   // SHARED
 
   createEnquiry: {
-    tags: ['Shared'],
+    tags: ['Enquiries'],
     summary: 'Create enquiry',
     response: DefaultRouteResponse,
   },
 
   listEnquiries: {
-    tags: ['Shared'],
+    tags: ['Enquiries'],
     summary: 'List enquiries',
     security: defaultProtected,
     response: DefaultRouteResponse,
   },
 
   getEnquiry: {
-    tags: ['Shared'],
+    tags: ['Enquiries'],
     summary: 'Get enquiry',
     security: defaultProtected,
     params: IdParam,
@@ -475,7 +475,7 @@ export const swaggerSchemas = {
   },
 
   updateEnquiryStatus: {
-    tags: ['Shared'],
+    tags: ['Enquiries'],
     summary: 'Update enquiry status',
     security: defaultProtected,
     params: IdParam,
@@ -483,20 +483,20 @@ export const swaggerSchemas = {
   },
 
   listFaq: {
-    tags: ['Shared'],
+    tags: ['FAQ'],
     summary: 'List FAQ',
     response: DefaultRouteResponse,
   },
 
   createFaq: {
-    tags: ['Shared'],
+    tags: ['FAQ'],
     summary: 'Create FAQ',
     security: defaultProtected,
     response: DefaultRouteResponse,
   },
 
   updateFaq: {
-    tags: ['Shared'],
+    tags: ['FAQ'],
     summary: 'Update FAQ',
     security: defaultProtected,
     params: IdParam,
@@ -504,7 +504,7 @@ export const swaggerSchemas = {
   },
 
   deleteFaq: {
-    tags: ['Shared'],
+    tags: ['FAQ'],
     summary: 'Delete FAQ',
     security: defaultProtected,
     params: IdParam,
@@ -512,26 +512,26 @@ export const swaggerSchemas = {
   },
 
   listPromotions: {
-    tags: ['Shared'],
+    tags: ['Promotions'],
     summary: 'List promotions',
     response: DefaultRouteResponse,
   },
 
   getActivePromotion: {
-    tags: ['Shared'],
+    tags: ['Promotions'],
     summary: 'Get active promotion',
     response: DefaultRouteResponse,
   },
 
   createPromotion: {
-    tags: ['Shared'],
+    tags: ['Promotions'],
     summary: 'Create promotion',
     security: defaultProtected,
     response: DefaultRouteResponse,
   },
 
   updatePromotion: {
-    tags: ['Shared'],
+    tags: ['Promotions'],
     summary: 'Update promotion',
     security: defaultProtected,
     params: IdParam,
@@ -539,7 +539,7 @@ export const swaggerSchemas = {
   },
 
   deactivatePromotion: {
-    tags: ['Shared'],
+    tags: ['Promotions'],
     summary: 'Deactivate promotion',
     security: defaultProtected,
     params: IdParam,
@@ -547,19 +547,19 @@ export const swaggerSchemas = {
   },
 
   listCustomerLooks: {
-    tags: ['Shared'],
+    tags: ['Customer Looks'],
     summary: 'List customer looks',
     response: DefaultRouteResponse,
   },
 
   submitLook: {
-    tags: ['Shared'],
+    tags: ['Customer Looks'],
     summary: 'Submit customer look',
     response: DefaultRouteResponse,
   },
 
   approveLook: {
-    tags: ['Shared'],
+    tags: ['Customer Looks'],
     summary: 'Approve customer look',
     security: defaultProtected,
     params: IdParam,
@@ -567,7 +567,7 @@ export const swaggerSchemas = {
   },
 
   deleteLook: {
-    tags: ['Shared'],
+    tags: ['Customer Looks'],
     summary: 'Delete customer look',
     security: defaultProtected,
     params: IdParam,
@@ -575,57 +575,57 @@ export const swaggerSchemas = {
   },
 
   getCart: {
-    tags: ['Shared'],
+    tags: ['Cart'],
     summary: 'Get cart',
     response: DefaultRouteResponse,
   },
 
   addCartItem: {
-    tags: ['Shared'],
+    tags: ['Cart'],
     summary: 'Add cart item',
     response: DefaultRouteResponse,
   },
 
   updateCartItem: {
-    tags: ['Shared'],
+    tags: ['Cart'],
     summary: 'Update cart item',
     response: DefaultRouteResponse,
   },
 
   removeCartItem: {
-    tags: ['Shared'],
+    tags: ['Cart'],
     summary: 'Remove cart item',
     response: DefaultRouteResponse,
   },
 
   clearCart: {
-    tags: ['Shared'],
+    tags: ['Cart'],
     summary: 'Clear cart',
     response: DefaultRouteResponse,
   },
 
   listBundles: {
-    tags: ['Shared'],
+    tags: ['Bundles'],
     summary: 'List bundles',
     response: DefaultRouteResponse,
   },
 
   getBundle: {
-    tags: ['Shared'],
+    tags: ['Bundles'],
     summary: 'Get bundle',
     params: IdParam,
     response: DefaultRouteResponse,
   },
 
   createBundle: {
-    tags: ['Shared'],
+    tags: ['Bundles'],
     summary: 'Create bundle',
     security: defaultProtected,
     response: DefaultRouteResponse,
   },
 
   updateBundle: {
-    tags: ['Shared'],
+    tags: ['Bundles'],
     summary: 'Update bundle',
     security: defaultProtected,
     params: IdParam,
@@ -633,7 +633,7 @@ export const swaggerSchemas = {
   },
 
   deleteBundle: {
-    tags: ['Shared'],
+    tags: ['Bundles'],
     summary: 'Delete bundle',
     security: defaultProtected,
     params: IdParam,
