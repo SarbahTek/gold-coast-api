@@ -9,10 +9,13 @@ const envSchema = z.object({
   API_PREFIX: z.string().default('/api/v1'),
 
   // Database
+  // DATABASE_URL: pooled connection (PgBouncer) — used by PrismaClient at runtime
+  // DIRECT_URL:   non-pooled direct connection — used by prisma migrate deploy
   DATABASE_URL: z.string().url(),
+  DIRECT_URL: z.string().url().optional(),
 
   // Redis
-  REDIS_URL: z.string().url(),
+  REDIS_URL: z.string(),
 
   // JWT
   JWT_ACCESS_SECRET: z.string().min(32),
