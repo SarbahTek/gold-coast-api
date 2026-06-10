@@ -9,17 +9,28 @@ export async function errorHandlerPlugin(app: FastifyInstance): Promise<void> {
   app.setErrorHandler((error: FastifyError | Error, request, reply) => {
     const logger = request.log
 
+    // Helper: send error response bypassing Fastify's schema serializer.
+    // Fastify serializes error responses through the route's declared response
+    // schema. If the error shape doesn't exactly match that schema, fast-json-stringify
+    // throws and produces a second serialization error (the "code is required" crash loop).
+    // Calling reply.serializer(JSON.stringify) before .send() forces raw JSON output
+    // regardless of what schema the route declared.
+    const sendError = (statusCode: number, body: unknown) => {
+      return reply
+        .status(statusCode)
+        .serializer(JSON.stringify)
+        .send(body)
+    }
+
     // Login brute-force rate limit
     if (error instanceof LoginRateLimitError) {
       reply.header('Retry-After', String(error.retryAfterSeconds))
-      return reply.status(429).send(failure('RATE_LIMITED', error.message))
+      return sendError(429, failure('RATE_LIMITED', error.message))
     }
 
     // Zod validation errors
     if (error instanceof ZodError) {
-      return reply.status(400).send(
-        failure('VALIDATION_ERROR', 'Validation failed', error.flatten()),
-      )
+      return sendError(400, failure('VALIDATION_ERROR', 'Validation failed', error.flatten()))
     }
 
     // Our custom app errors
@@ -27,46 +38,38 @@ export async function errorHandlerPlugin(app: FastifyInstance): Promise<void> {
       if (error.statusCode >= 500) {
         logger.error({ err: error }, 'Application error')
       } else {
-        logger.warn({ err: error }, 'Client error')
+        logger.info(error.message)
       }
-      return reply.status(error.statusCode).send(
-        failure(error.code, error.message, error.details),
-      )
+      return sendError(error.statusCode, failure(error.code, error.message, error.details))
     }
 
     // Prisma errors
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        return reply.status(409).send(
-          failure('CONFLICT', 'A record with this value already exists', {
-            fields: error.meta?.target,
-          }),
-        )
+        return sendError(409, failure('CONFLICT', 'A record with this value already exists', {
+          fields: error.meta?.target,
+        }))
       }
       if (error.code === 'P2025') {
-        return reply.status(404).send(failure('NOT_FOUND', 'Record not found'))
+        return sendError(404, failure('NOT_FOUND', 'Record not found'))
       }
       logger.error({ err: error }, 'Prisma error')
-      return reply.status(500).send(failure('DATABASE_ERROR', 'Database error'))
+      return sendError(500, failure('DATABASE_ERROR', 'Database error'))
     }
 
     // Fastify validation errors (schema validation)
     if ('validation' in error && error.validation) {
-      return reply.status(400).send(
-        failure('VALIDATION_ERROR', error.message, error.validation),
-      )
+      return sendError(400, failure('VALIDATION_ERROR', error.message, error.validation))
     }
 
     // Generic errors
     logger.error({ err: error }, 'Unhandled error')
-    return reply.status(500).send(
-      failure(
-        'INTERNAL_ERROR',
-        process.env['NODE_ENV'] === 'production'
-          ? 'An unexpected error occurred'
-          : error.message,
-      ),
-    )
+    return sendError(500, failure(
+      'INTERNAL_ERROR',
+      process.env['NODE_ENV'] === 'production'
+        ? 'An unexpected error occurred'
+        : error.message,
+    ))
   })
 
   // 404 handler

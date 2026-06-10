@@ -15,11 +15,11 @@ export const createReviewSchema = z.object({
 })
 
 export const listReviewsSchema = z.object({
-  page: z.string().optional().transform(Number).pipe(z.number().int().positive().default(1)),
-  limit: z.string().optional().transform(Number).pipe(z.number().int().min(1).max(100).default(20)),
-  productId: z.string().optional().transform(Number).pipe(z.number().int().positive().optional()),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  productId: z.coerce.number().int().positive().optional(),
   verified: z.string().optional().transform((v) => v === 'true'),
-  rating: z.string().optional().transform(Number).pipe(z.number().int().min(1).max(5).optional()),
+  rating: z.coerce.number().int().min(1).max(5).optional(),
 })
 
 export type CreateReviewDto = z.infer<typeof createReviewSchema>

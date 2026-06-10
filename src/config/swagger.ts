@@ -12,7 +12,7 @@ import { env } from './env'
 const ApiResponse = {
   type: 'object',
 
-  required: ['success', 'message'],
+  required: ['success'],
 
   properties: {
     success: { type: 'boolean' },
@@ -60,8 +60,6 @@ const ApiResponse = {
 const ErrorResponse = {
   type: 'object',
 
-  required: ['success', 'error'],
-
   properties: {
     success: {
       type: 'boolean',
@@ -70,8 +68,6 @@ const ErrorResponse = {
 
     error: {
       type: 'object',
-
-      required: ['code', 'message'],
 
       properties: {
         code: { type: 'string' },
@@ -94,15 +90,10 @@ const PaginationQuery = {
   type: 'object',
   properties: {
     page: {
-      type: 'integer',
-      default: 1,
-      minimum: 1,
+      type: 'string',
     },
     limit: {
-      type: 'integer',
-      default: 20,
-      minimum: 1,
-      maximum: 100,
+      type: 'string',
     },
   },
 } as const
@@ -385,6 +376,18 @@ export const swaggerSchemas = {
   createReview: {
     tags: ['Reviews'],
     summary: 'Create review',
+    body: {
+      type: 'object',
+      required: ['productId', 'rating'],
+      properties: {
+        productId: { type: 'integer' },
+        rating: { type: 'integer', minimum: 1, maximum: 5 },
+        title: { type: 'string' },
+        body: { type: 'string' },
+        location: { type: 'string' },
+        guestName: { type: 'string' },
+      },
+    },
     response: DefaultRouteResponse,
   },
 
@@ -456,6 +459,18 @@ export const swaggerSchemas = {
   createEnquiry: {
     tags: ['Enquiries'],
     summary: 'Create enquiry',
+    body: {
+      type: 'object',
+      required: ['firstName', 'lastName', 'email', 'message'],
+      properties: {
+        firstName: { type: 'string' },
+        lastName: { type: 'string' },
+        email: { type: 'string', format: 'email' },
+        phone: { type: 'string' },
+        productInterest: { type: 'string' },
+        message: { type: 'string' },
+      },
+    },
     response: DefaultRouteResponse,
   },
 
